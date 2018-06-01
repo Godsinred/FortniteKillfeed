@@ -20,7 +20,8 @@ class Similarity:
             "was lost in the storm" : 21,
             "didn\'t stick the landing" : 24,
             "is literally on fire" : 20,
-            "took the L" : 10
+            "took the L" : 10,
+            "went out with a BANG" : 20
         }
 
     def check(self, line):

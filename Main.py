@@ -117,6 +117,10 @@ def process_text(line, fortnite_database, checked = False):
         way = "took the L"
         fortnite_database.update_db(line, way)
 
+    elif "went out with a BANG" in line or "went out with a BANG!" in line:
+        way = "went out with a BANG"
+        fortnite_database.update_db(line, way)
+
     elif "is now spectating you" in line:
         return
     else:
@@ -127,7 +131,8 @@ def process_text(line, fortnite_database, checked = False):
             new_line = update_sentence(line)
             process_text(line, fortnite_database, True)
 # try:
-    brians_printer.print_table("SELECT * FROM CurrentStats ORDER BY alive desc", 'Game results', fortnite_database.cur)
+    print('here 4')
+    brians_printer.print_table(LOCK, "SELECT * FROM CurrentStats ORDER BY alive desc", 'Game results', fortnite_database.cur)
     # brians_printer.print_table("SELECT * FROM Players ORDER BY player_id", 'Players', fortnite_database.cur)
     # brians_printer.print_table("SELECT * FROM WeaponStats ORDER BY player_id", 'Weapon stats', fortnite_database.cur)
     # pretty_print(conn,cur)
@@ -210,23 +215,25 @@ def main():
     t = threading.Thread(target=thread_fortnite_api, args=(fortnite_database,), daemon=True)
     # starts the thread
     t.start()
-    t1 = threading.Thread(target=graphing.run_dash, args=(LOCK,), daemon=True)
+    t1 = threading.Thread(target=graphing.run_dash, args=(LOCK, fortnite_database), daemon=True)
     t1.start()
 
     # gets the display size of the computer
     x, y = pyautogui.size()
-
+    # time.sleep(3)
+    # exit()
     # here to num the photos in case we want a reference to them later
     num = 1
 
     # credentials for vision.ImageAnnotatorClient() object
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r'/Users/godsinred/Desktop/account_key.json'
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r'C:\Users\Jonathan\Desktop\account_key.json'
 
     # Instantiates a client
     client = vision.ImageAnnotatorClient()
-    time.sleep(5)
+
     # runs the program the the person dies
     # while num < 5 is still in there it only runs 5 iterations
+    now = time.time()
     while username not in fortnite_database.dead and username.replace('_', ' ') not in fortnite_database.dead:
         #take_screenshot(x, y) # run this one for a real game. don't want a bunch of numbered photos
         #take_linux_screenshot(x, y)  # if on linux use this
@@ -252,20 +259,27 @@ def main():
             labels = response.text_annotations[0].description.strip().split('\n')
         except:
             time.sleep(4)
+            print("nothing lap: " + str(time.time() - now))
+            now = time.time()
             continue
 
         print(labels)
         for label in labels:
             label = label.lower()
+            print('here 1')
             if label not in fortnite_database.history:
                 # insert it in the front to reduce checking time
                 fortnite_database.history.insert(0, label)
+                print('here 2')
                 process_text(label, fortnite_database)
+                print('here 3')
 
         #subprocess.call(["afplay", "/System/Library/Sounds/Funk.aiff"])
         # this time.sleep() kinda monitors how often the screen shot should be taken
-        # almost like update rate of the program
+        # almost like update rate of the program plus the time it takes to look ~1s
         time.sleep(3)
+        print("lap: " + str(time.time() - now))
+        now = time.time()
         num += 1
 
     fortnite_database.conn.close()

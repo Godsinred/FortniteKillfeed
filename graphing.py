@@ -14,7 +14,7 @@ def connect():
     Creates a connection to a sql database named fortnite_feed.sqlite
     :return: a cursor pointing to the database file
     """
-    con = sql.connect('fortnite_feed.sqlite')
+    con = sql.connect('fortnite_feed.sqlite', check_same_thread=False)
     cur = con.cursor()
     return cur
 
@@ -100,7 +100,7 @@ def setup_layout(cur, app, thread_lock):
 
         dcc.Interval(
             id='interval-component',
-            interval=1000, # in milliseconds
+            interval=2000, # in milliseconds
             n_intervals=0
         )
     ])
@@ -118,13 +118,13 @@ def get_top_ten(cur, thread_lock):
     order by current_kills desc
     limit 10
     """
+    data = ''
     try:
         thread_lock.acquire(True)
         cur.execute(cmd)
+        data = cur.fetchall()
     finally:
         thread_lock.release()
-
-    data = cur.fetchall()
 
     usernames = []
     kills = []
@@ -145,13 +145,14 @@ def get_player_info(cur, thread_lock):
     select username, current_kills, platform, current_weapon, total_wins, total_matches, kd from CurrentStats
     order by alive desc, current_kills desc
     """
+    data = ''
     try:
         thread_lock.acquire(True)
         cur.execute(cmd)
+        data = cur.fetchall()
     finally:
         thread_lock.release()
 
-    data = cur.fetchall()
     if len(data) < 1:
         return []
 
@@ -176,13 +177,15 @@ def get_favorite_weapon(username, cur, thread_lock):
     from WeaponStats
     where username="{}"
     """.format(username)
+
+    data = ''
     try:
         thread_lock.acquire(True)
         cur.execute(cmd)
+        data = cur.fetchall()
     finally:
         thread_lock.release()
 
-    data = cur.fetchall()
     if len(data) == 0:
         return 'No Game Data'
 
@@ -201,30 +204,30 @@ def get_favorite_weapon(username, cur, thread_lock):
 
     return fav_weapon
         
-def run_dash(thread_lock):
+def run_dash(thread_lock, fortnite_database):
     """
     Runs the dash dashboard
     :param thread_lock: a thread lock global which prevents two threads from accessing the db at the same time
     :return:
     """
-    cur = connect()
+    # cur = connect()
     app = dash.Dash(__name__, static_folder='assets')
     app.scripts.config.serve_locally=True
     app.css.config.serve_locally=True
 
-    setup_layout(cur, app, thread_lock)
+    setup_layout(fortnite_database.cur, app, thread_lock)
 
     """Updates the bar graph in 1 second intervals"""
     @app.callback(Output(component_id='players_bar', component_property='figure'),
                 [Input(component_id='interval-component', component_property='n_intervals')])
     def update_graph_live(n):
-        return generate_bar_graph(cur, thread_lock)
+        return generate_bar_graph(fortnite_database.cur, thread_lock)
 
     """updates the table simultaneously with the bar graph"""
     @app.callback(Output('table_id', 'children'),
                 [Input(component_id='interval-component', component_property='n_intervals')])
     def update_table_live(n):
-        return generate_table(cur, thread_lock)
+        return generate_table(fortnite_database.cur, thread_lock)
 
     """sets the flask server to serve static files from the assets folder"""
     @app.server.route('/assets/<path:path>')

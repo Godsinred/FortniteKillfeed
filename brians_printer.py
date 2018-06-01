@@ -1,6 +1,6 @@
 import sqlite3
 
-def print_table(cmd, table_name, curr, args=()):
+def print_table(thread_lock, cmd, table_name, curr, args=()):
     """
     Prints a table in a readable format
     :param: cmd [str] -- an sqlite3 command
@@ -8,18 +8,25 @@ def print_table(cmd, table_name, curr, args=()):
     :param: curr [sqlite3.cursor] -- cursor in the db
     :param: args [tuple] -- any optional arguments to be passed to the cmd string
     """
+    results = ''
+    curr_description = []
+    try:
+        thread_lock.acquire(True)
+        # find table
+        if args == ():
+            curr.execute(cmd)
+        else:
+            curr.execute(cmd, args)
+    finally:
+        results = curr.fetchall()
+        curr_description = curr.description
+        thread_lock.release()
 
-    # find table
-    if args == ():
-        curr.execute(cmd)
-    else:
-        curr.execute(cmd, args)
-    results = curr.fetchall()
     print('{} -- {} items'.format(table_name, len(results)))
 
     # get column names
     column_names = []
-    for record in curr.description:
+    for record in curr_description:
         column_names.append(record[0])
 
     max_column_width = 0
@@ -40,6 +47,7 @@ def print_table(cmd, table_name, curr, args=()):
         print('|')
 
     print()
+
 
     return results
 

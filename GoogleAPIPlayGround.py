@@ -6,14 +6,14 @@ from google.cloud.vision import types
 import time
 
 # credentials for vision.ImageAnnotatorClient() object
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = '/Users/godsinred/Desktop/GoogleAPI/account_key.json'
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] =  r'C:\Users\Jonathan\Desktop\account_key.json'
 # Instantiates a client
 client = vision.ImageAnnotatorClient()
 
 # The name of the image file to annotate
 file_name = os.path.join(
     os.path.dirname(__file__),
-    'Screenshot.png')
+    'Capture.jpg')
 
 # Loads the image into memory
 with io.open(file_name, 'rb') as image_file:
@@ -23,15 +23,13 @@ image = types.Image(content=content)
 
 # Performs label detection on the image file
 response = client.text_detection(image=image)
-labels = ''
-try:
-    labels = response.text_annotations[0].description.strip().split('\n')
-except:
-    print('here')
+texts = response.text_annotations
+print('Texts:')
 
-print("Lines:")
-i = 1
-for label in labels:
-    print("Line " + str(i) + ": ", end='')
-    print(label)
-    i += 1
+for text in texts:
+    print('\n"{}"'.format(text.description))
+
+    vertices = (['({},{})'.format(vertex.x, vertex.y)
+                 for vertex in text.bounding_poly.vertices])
+
+    print('bounds: {}'.format(','.join(vertices)))

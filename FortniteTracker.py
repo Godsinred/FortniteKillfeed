@@ -50,9 +50,6 @@ class FortniteTracker:
         alive INTEGER
         );
         
-        CREATE TABLE IF NOT EXISTS Players(
-        player_id INTEGER PRIMARY KEY NOT NULL,
-        username TEXT);
         
         CREATE TABLE IF NOT EXISTS WeaponStats(
         player_id INTEGER PRIMARY KEY NOT NULL,
@@ -65,6 +62,12 @@ class FortniteTracker:
         pistol_kills INTEGER,
         pickaxe_kills INTEGER
         );
+        """
+
+        """
+        CREATE TABLE IF NOT EXISTS Players(
+        player_id INTEGER PRIMARY KEY NOT NULL,
+        username TEXT);
         """
         try:
             self.thread_lock.acquire(True)
@@ -96,12 +99,15 @@ class FortniteTracker:
         :param name: a string, player's name
         :return: nothing
         """
-
-        self.cur.execute("""SELECT * FROM Players WHERE username='{}'""".format(name))
-        data = self.cur.fetchall()
-        if len(data) == 0:
-            cmd = """INSERT OR IGNORE INTO Players(username) VALUES(?)"""
-            self.thread_safe_execute(cmd, (name,))
+        try:
+            self.thread_lock.acquire(True)
+            self.cur.execute("""SELECT * FROM Players WHERE username='{}'""".format(name))
+            data = self.cur.fetchall()
+            if len(data) == 0:
+                cmd = """INSERT OR IGNORE INTO Players(username) VALUES(?)"""
+                self.thread_safe_execute(cmd, (name,))
+        finally:
+            self.thread_lock.release()
 
     def add_weapon_stats(self, name):
         """
@@ -109,14 +115,17 @@ class FortniteTracker:
         :param name: a string, player's name
         :return: nothing
         """
+        try:
+            self.thread_lock.acquire(True)
+            self.cur.execute("""SELECT * FROM WeaponStats WHERE username='{}'""".format(name))
+            data = self.cur.fetchall()
+            if len(data) == 0:
+                cmd = """INSERT OR IGNORE INTO WeaponStats(username, shotgun_kills, pistol_kills, pickaxe_kills, 
+                explosives_kills, sniper_kills, rifle_kills, smg_kills) VALUES(?,?,?,?,?,?,?,?)"""
 
-        self.cur.execute("""SELECT * FROM WeaponStats WHERE username='{}'""".format(name))
-        data = self.cur.fetchall()
-        if len(data) == 0:
-            cmd = """INSERT OR IGNORE INTO WeaponStats(username, shotgun_kills, pistol_kills, pickaxe_kills, 
-            explosives_kills, sniper_kills, rifle_kills, smg_kills) VALUES(?,?,?,?,?,?,?,?)"""
-
-            self.thread_safe_execute(cmd, (name, 0, 0, 0, 0, 0, 0, 0))
+                self.cur.execute(cmd, (name, 0, 0, 0, 0, 0, 0, 0))
+        finally:
+            self.thread_lock.release()
 
     def update_weapon_stats(self, username, current_wep):
         """
@@ -127,6 +136,7 @@ class FortniteTracker:
         """
         weapons = ['explosives', 'sniper', 'rifle', 'smg', 'shotgun', 'pistol', 'pickaxe']
         try:
+            self.thread_lock.acquire(True)
             if current_wep in weapons:
                 cmd = """UPDATE WeaponStats SET {}_kills=({}_kills+1) 
                         WHERE username="{}"
@@ -135,6 +145,9 @@ class FortniteTracker:
                 self.conn.commit()
         except:
             print("Can't update weapon stats: for", username)
+
+        finally:
+            self.thread_lock.release()
 
 
     def update_db(self, line, way, current_wep=None):
@@ -145,7 +158,7 @@ class FortniteTracker:
         :param current_wep: the current weapon of the person
         :return: nothing
         """
-
+        print('here 5')
         if current_wep == None:
             index = line.find(way)
             dead_guy = line[0:index].strip()
@@ -162,7 +175,7 @@ class FortniteTracker:
 
             print("died: " + dead_guy)
             self.dead.insert(0, dead_guy)
-            self.add_player(dead_guy)
+            # self.add_player(dead_guy)
             self.add_weapon_stats(dead_guy)
 
         else:
@@ -188,25 +201,30 @@ class FortniteTracker:
                 killer = line[0:index-1].strip()
                 dead_guy = line[(index + 10):].strip()
 
-
+            print('here 6')
             # extra validation to make sure that the same lines doesn't get processed again due to an inaccurate
             # return from the google vision api because the same person can't die twice
             if dead_guy in self.dead:
+                print('here 9')
                 return
 
             if dead_guy in self.alive:
                 self.alive.remove(dead_guy)
+                print('here 10')
                 cmd = r"UPDATE CurrentStats SET alive=0 WHERE username='{}'".format(dead_guy)
                 self.thread_safe_execute(cmd)
+                print('here 11')
 
             self.dead.insert(0, dead_guy)
-            self.add_player(dead_guy)
+            print('here 12')
+            # self.add_player(dead_guy)
+            print('here 13')
             self.add_weapon_stats(dead_guy)
-
+            print('here 7')
             # checks to see if the player has been added to the db before
             if killer not in self.alive:
                 self.alive.insert(0, killer)
-                self.add_player(killer)
+                # self.add_player(killer)
                 self.add_weapon_stats(killer)
                 cmd = """INSERT INTO CurrentStats(username, platform, current_kills, current_weapon, total_wins, 
                 total_matches, win_percent, total_kills, kd, alive) VALUES(?,?,?,?,?,?,?,?,?,?)"""
@@ -220,6 +238,7 @@ class FortniteTracker:
                     current_wep, killer)
                 self.thread_safe_execute(cmd)
                 self.update_weapon_stats(killer, current_wep)
+            print('here 8')
 
     def get_api_stats(self, username, platform, priority_level, original_username=None):
         """
@@ -230,31 +249,39 @@ class FortniteTracker:
         :return: a tuple of the data to be used to store in the db
                  format of (total_wins, total_matches, win_percent, total_kills, kd)
         """
-
-        print("looking up: " + username)
+        epic = ''
+        found_epic = False
+        print("looking up: " + username + " on " + platform)
         if "[epic]" in username[:6]:
-            username = username.replace("[epic]", '').strip()
-            print("found an epic omplyee, looking up username - [epic]: " + username)
+            print("found an epic emplyee, looking up username - [epic]")
+            epic = 7
+            found_epic = True
+        elif "[epic_cs]" in username[:9] or "[epic cs]" in username[:9] :
+            print("found an epic emplyee, looking up username - [epic_cs]")
+            epic = 10
+            found_epic = True
 
         try:
-            r = requests.get("https://api.fortnitetracker.com/v1/profile/" + platform + '/' + username,
+            lookup_username = username
+            if found_epic:
+                lookup_username = username[epic:].strip()
+
+            r = requests.get("https://api.fortnitetracker.com/v1/profile/" + platform + '/' + lookup_username,
                              headers=self.header)
             data = r.json()
             stats = data["lifeTimeStats"]
             # returns all the data needed to enter in the
             # total_wins, total_matches, win_percent, total_kills, kd
+            temp_username = ''
             if priority_level != "last":
-                self.thread_safe_execute(r"""UPDATE CurrentStats SET total_wins={}, total_matches={}, win_percent={}, total_kills={}, kd={},
-                        platform='{}'
-                        WHERE username='{}'""".format(int(stats[8]["value"]), int(stats[7]["value"]),
-                        float(stats[9]["value"][:-1]), int(stats[10]["value"]), float(stats[11]["value"]), platform, username))
+                temp_username = username
             else:
-                self.thread_safe_execute(r"""UPDATE CurrentStats SET total_wins={}, total_matches={}, win_percent={}, total_kills={}, 
-                        kd={}, platform='{}', username='{}' 
-                        WHERE username='{}'""".format(int(stats[8]["value"]),
-                        int(stats[7]["value"]), float(stats[9]["value"][:-1]), int(stats[10]["value"]),
-                        float(stats[11]["value"]), platform, username, original_username))
+                temp_username = original_username
 
+            self.thread_safe_execute(r"""UPDATE CurrentStats SET total_wins={}, total_matches={}, win_percent={}, total_kills={}, kd={},
+                        platform='{}', username='{}'
+                        WHERE username='{}'""".format(int(stats[8]["value"]), int(stats[7]["value"]),
+                        float(stats[9]["value"][:-1]), int(stats[10]["value"]), float(stats[11]["value"]), platform, username, temp_username))
         except KeyError:
             # if this gets returned that means that the user wasn't found and requests threw and error
 
@@ -273,3 +300,5 @@ class FortniteTracker:
                 print(": Can't find/fix username: {}".format(original_username))
                 cmd = r"UPDATE CurrentStats SET platform='Not Found' WHERE username='{}'".format(original_username)
                 self.thread_safe_execute(cmd)
+        except:
+            print("Possible error from looking up nothing in the api.")
