@@ -210,8 +210,35 @@ def main():
     # starts the multi threading in the background to update the database
     # class threading.Thread(group=None, target=None, name=None, args=(), kwargs={}, *, daemon=None)
     # can use a barrier thread to synchronize all the threads
-    # if deamon thread is false the thread will keep running until it is time to stop
-    # if true the thread will stop when the program stops
+    # A thread can be flagged as a "Daemon Thread". The significance of this flag is that the entire python program exits
+    # when only daemon threads are left. The initial value is inherited from the creating thread. The flag can be set
+    # through the Daemon property or the deamon constructor argument.
+    # Note: Daemon threads are abruptly stopped at shutdown. Their resources such as open files, database transactions,
+    # etc. may not be releaseed properly. If you want your threads  to stop gracefully, make then non-daemonic and use
+    # a suitable signalling mechanism such as an event.
+    # daemon threads close ontheir own?
+    # thread.join() blocks everything until thread is done
+    # example below
+    # def check_open_conversation(self, thread_id):
+    #     if thread_id not in self.conversations:
+    #         t = threading.Thread(target=self.test, daemon=True)
+    #         # starts the thread
+    #         t.start()
+    #         # t.join()
+    #         if t.is_alive():
+    #             print("thread is alive")
+    #         else:
+    #             print("thrad is dead")
+    #
+    #         t.join()
+    #         if t.is_alive():
+    #             print("thread is alive")
+    #         else:
+    #             print("thrad is dead")
+    #
+    # def test(self):
+    #     time.sleep(5)
+    #     print("thread finished")
     t = threading.Thread(target=thread_fortnite_api, args=(fortnite_database,), daemon=True)
     # starts the thread
     t.start()
@@ -226,7 +253,7 @@ def main():
     num = 1
 
     # credentials for vision.ImageAnnotatorClient() object
-    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r'C:\Users\Jonathan\Desktop\account_key.json'
+    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = r'/Users/godsinred/Desktop/account_key.json'
 
     # Instantiates a client
     client = vision.ImageAnnotatorClient()
@@ -235,9 +262,9 @@ def main():
     # while num < 5 is still in there it only runs 5 iterations
     now = time.time()
     while username not in fortnite_database.dead and username.replace('_', ' ') not in fortnite_database.dead:
-        #take_screenshot(x, y) # run this one for a real game. don't want a bunch of numbered photos
+        take_screenshot(x, y) # run this one for a real game. don't want a bunch of numbered photos
         #take_linux_screenshot(x, y)  # if on linux use this
-        take_windows_screenshot(x, y) # if on windows use this
+        # take_windows_screenshot(x, y) # if on windows use this
 
         # The name of the image file to annotate
         file_name = os.path.join(os.path.dirname(__file__), "Screenshot.png")
