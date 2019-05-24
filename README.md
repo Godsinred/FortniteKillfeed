@@ -3,6 +3,10 @@
 # Fortnite Tracker
 
   The program creates a real time tracker in Fortnite Battle Royal. The program will collect the data from the killfeed and give the user the live time stats of the players currently playing the same game as them. The data would be what weapon the players are using and which player killed who.
+  
+## Short Video Of The Program
+
+[![Watch the video]](assets/Fortnite_killfeed_beta_demo.mp4)
 
 ## Getting Started
 
