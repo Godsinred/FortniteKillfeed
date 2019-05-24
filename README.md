@@ -6,7 +6,7 @@
   
 ## Short Video Of The Program
 
-![Watch the video](assets/Fortnite_killfeed_beta_demo.mp4)
+[![Watch the video](https://i.imgur.com/vKb2F1B.png)](assets/Fortnite_killfeed_beta_demo.mp4)
 
 ## Getting Started
 
