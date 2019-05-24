@@ -6,7 +6,7 @@
   
 ## Short Video Of The Program
 
-[![Watch the video](https://www.google.com/url?sa=i&rct=j&q=&esrc=s&source=images&cd=&ved=2ahUKEwj-7ozu7rPiAhUICjQIHa__ACgQjRx6BAgBEAU&url=https%3A%2F%2Fwww.businessinsider.com%2Ffortnite-creators-grade-f-from-better-business-bureau-after-complaints-2019-1&psig=AOvVaw0aMi56cjdw7Dwhh1cLSfFO&ust=1558776968076811)](assets/Fortnite_killfeed_beta_demo.mp4)
+[![Watch the video](https://amp.businessinsider.com/images/5c366de02a5b7442d75cda92-750-563.jpg)](assets/Fortnite_killfeed_beta_demo.mp4)
 
 ## Getting Started
 
