@@ -12,7 +12,7 @@ import graphing
 from google.cloud import vision
 from google.cloud.vision import types
 
-API_KEY = "e7462887-33cc-44d2-bb7d-ea3796b3231f"
+API_KEY = "<API_KEY_GOES_HERE>"
 LOCK = threading.Lock()
 
 """
