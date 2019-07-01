@@ -6,7 +6,7 @@
   
 ## Short Video Of The Program
 
-Click below to download and watch!
+Click below to download and watch! (if it doesn't open click view raw and view it in your computers video player)
 [![Watch the video](https://amp.businessinsider.com/images/5c366de02a5b7442d75cda92-750-563.jpg)](assets/Fortnite_killfeed_beta_demo.mp4)
 
 ## Getting Started
